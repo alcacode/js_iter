@@ -1,0 +1,33 @@
+{
+        "compileOnSave": true,
+        "compilerOptions": {
+                "target": "ES5",
+                "baseUrl": ".",
+                "moduleResolution": "node",
+                "esModuleInterop": true,
+                "sourceMap": false,
+                "strict": true,
+                "noUnusedLocals": true,
+                "noUnusedParameters": true,
+                "removeComments": true,
+                "outFile": "./build.js",
+                "experimentalDecorators": true,
+                "incremental": true,
+                "lib": [
+                        "ES5",
+                        "DOM"
+                ],
+                "rootDir": "./src/",
+                "stripInternal": true
+        },
+        "include": [
+                "./src/**/*"
+        ],
+        "exclude": [
+                ".vscode",
+                ".gitignore",
+                "package-lock.json",
+                "*.code-workspace",
+                "node_modules"
+        ]
+}
