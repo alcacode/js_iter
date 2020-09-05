@@ -18,12 +18,18 @@ function setPrototype(target, proto) {
 }
 var Iterator = (function () {
     function Iterator() {
+        this.peekBuf = null;
         this.done = false;
         var next = this.next;
         this.next = this._next;
         this._next = next;
     }
     Iterator.prototype._next = function () {
+        if (this.peekBuf !== null) {
+            var val_1 = this.peekBuf;
+            this.peekBuf = null;
+            return val_1;
+        }
         if (this.done)
             return { value: undefined, done: true };
         var val = this._next();
@@ -31,12 +37,29 @@ var Iterator = (function () {
             this.done = true;
         return val;
     };
+    Iterator.prototype.peek = function () {
+        if (this.peekBuf === null)
+            this.peekBuf = this.next();
+        return this.peekBuf;
+    };
     Iterator.prototype.collect = function () {
         var res = [];
         var v;
         while (!(v = this.next()).done)
             res.push(v.value);
         return res;
+    };
+    Iterator.prototype.take = function (n) {
+        var self = this;
+        var o = Object.create(self);
+        o.next = function () {
+            if (n > 0) {
+                n -= 1;
+                return self.next();
+            }
+            return { value: undefined, done: true };
+        };
+        return o;
     };
     Iterator.prototype.takeWhile = function (predicate) {
         return setPrototype(new TakeWhile(this, predicate), this);
@@ -46,10 +69,8 @@ var Iterator = (function () {
     };
     Iterator.prototype.nth = function (n) {
         var val;
-        while (n-- > 0) {
-            if ((val = this.next()).done)
-                break;
-        }
+        while (n-- >= 0 && !(val = this.next()).done)
+            ;
         return val === null || val === void 0 ? void 0 : val.value;
     };
     Iterator.prototype.skip = function (n) {
@@ -78,10 +99,10 @@ var TakeWhile = (function (_super) {
     }
     TakeWhile.prototype.next = function () {
         if (!this.done) {
-            var val = this.iter.next();
+            var val = this.iter.peek();
             this.done = val.done || !this.pred.call(undefined, val.value);
             if (!this.done)
-                return val;
+                return this.iter.next();
         }
         return { value: undefined, done: true };
     };

@@ -8,9 +8,11 @@ type IteratorResult<T> = {
         done: true;
 };
 
-function setPrototype<T>(target: T & { __proto__: object | null }, proto: object | null): T & { __proto__: typeof proto } {
-        target.__proto__ = proto;
-        return target;
+type ProtoAttr = { __proto__: object | null };
+
+function setPrototype<T, U>(target: T, proto: object | null): U & ProtoAttr {
+        (target as T & ProtoAttr).__proto__ = proto;
+        return target as any;
 }
 
 interface Iterator<T> {
@@ -18,6 +20,7 @@ interface Iterator<T> {
 }
 
 abstract class Iterator<T> {
+        private peekBuf: IteratorResult<T> | null = null;
         protected done: boolean = false;
 
         abstract next(): IteratorResult<T>;
@@ -29,6 +32,13 @@ abstract class Iterator<T> {
         }
 
         private _next(): IteratorResult<T> {
+                if (this.peekBuf !== null) {
+                        const val = this.peekBuf;
+                        this.peekBuf = null;
+
+                        return val;
+                }
+
                 if (this.done)
                         return { value: undefined, done: true };
 
@@ -39,6 +49,13 @@ abstract class Iterator<T> {
                 return val;
         }
 
+        peek(): IteratorResult<T> {
+                if (this.peekBuf === null)
+                        this.peekBuf = this.next();
+
+                return this.peekBuf;
+        }
+
         collect() {
                 const res: any = [];
                 let v;
@@ -46,6 +63,19 @@ abstract class Iterator<T> {
                         res.push(v.value!);
 
                 return res;
+        }
+
+        take(n: number): Iterator<T> {
+                const self = this;
+                const o: Iterator<T> = Object.create(self);
+                o.next = function() {
+                        if (n > 0) {
+                                n -= 1;
+                                return self.next();
+                        }
+                        return { value: undefined, done: true };
+                };
+                return o;
         }
 
         /** 
@@ -66,10 +96,7 @@ abstract class Iterator<T> {
 
         nth(n: number): T | undefined {
                 let val;
-                while (n-- > 0) {
-                        if ((val = this.next()).done)
-                                break;
-                }
+                while (n-- >= 0 && !(val = this.next()).done) ; // Empty block.
 
                 return val?.value;
         }
@@ -101,10 +128,10 @@ class TakeWhile<T> extends Iterator<T> {
 
         next(): IteratorResult<T> {
                 if (!this.done) {
-                        const val = this.iter.next();
+                        const val = this.iter.peek();
                         this.done = val.done || !this.pred.call(undefined, val.value);
                         if (!this.done)
-                                return val;
+                                return this.iter.next();
                 }
 
                 return { value: undefined, done: true };
