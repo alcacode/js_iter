@@ -12,6 +12,10 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+function setPrototype(target, proto) {
+    target.__proto__ = proto;
+    return target;
+}
 var Iterator = (function () {
     function Iterator() {
         this.done = false;
@@ -35,10 +39,10 @@ var Iterator = (function () {
         return res;
     };
     Iterator.prototype.takeWhile = function (predicate) {
-        return new TakeWhile(this, predicate);
+        return setPrototype(new TakeWhile(this, predicate), this);
     };
     Iterator.prototype.skipWhile = function (predicate) {
-        return new SkipWhile(this, predicate);
+        return setPrototype(new SkipWhile(this, predicate), this);
     };
     Iterator.prototype.nth = function (n) {
         var val;

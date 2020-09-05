@@ -8,8 +8,16 @@ type IteratorResult<T> = {
         done: true;
 };
 
+function setPrototype<T>(target: T & { __proto__: object | null }, proto: object | null): T & { __proto__: typeof proto } {
+        target.__proto__ = proto;
+        return target;
+}
+
+interface Iterator<T> {
+        __proto__: Iterator<T>;
+}
+
 abstract class Iterator<T> {
-        /** The `T`-yielding object being iterated over. */
         protected done: boolean = false;
 
         abstract next(): IteratorResult<T>;
@@ -44,7 +52,7 @@ abstract class Iterator<T> {
          * Creates a new `Iterator` yielding values while `predicate` returns `true`.
          */
         takeWhile(predicate: (val: T) => boolean): TakeWhile<T> {
-                return new TakeWhile(this, predicate);
+                return setPrototype(new TakeWhile(this, predicate), this);
         }
 
         /** 
@@ -53,7 +61,7 @@ abstract class Iterator<T> {
          * After returning `false` no more values are skipped.
          */
         skipWhile(predicate: (val: T) => boolean): SkipWhile<T> {
-                return new SkipWhile(this, predicate);
+                return setPrototype(new SkipWhile(this, predicate), this);
         }
 
         nth(n: number): T | undefined {
