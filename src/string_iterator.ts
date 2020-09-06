@@ -21,7 +21,7 @@ class stringIterator extends ExactSizeIterator<string> {
         }
 
         len(): number {
-                return this.str.length - this.offset;
+                return this.str.length - this.offset + (this.peekBuf !== null ? 1 : 0);
         }
 
         next(): IteratorResult<string> {

@@ -20,7 +20,7 @@ interface Iterator<T> {
 }
 
 abstract class Iterator<T> {
-        private peekBuf: IteratorResult<T> | null = null;
+        protected peekBuf: IteratorResult<T> | null = null;
         protected done: boolean = false;
 
         abstract next(): IteratorResult<T>;
@@ -49,6 +49,7 @@ abstract class Iterator<T> {
                 return val;
         }
 
+        /** Peeks at the next value without incrementing the `Iterator`. */
         peek(): IteratorResult<T> {
                 if (this.peekBuf === null)
                         this.peekBuf = this.next();
