@@ -65,6 +65,7 @@ abstract class Iterator<T> {
                 return res;
         }
 
+        /** Creates an iterator that yields the first `n` values. */
         take(n: number): Iterator<T> {
                 const self = this;
                 const o: Iterator<T> = Object.create(self);
@@ -79,21 +80,21 @@ abstract class Iterator<T> {
         }
 
         /** 
-         * Creates a new `Iterator` yielding values while `predicate` returns `true`.
+         * Creates an `Iterator` that yield values while `predicate` returns `true`.
          */
         takeWhile(predicate: (val: T) => boolean): TakeWhile<T> {
                 return setPrototype(new TakeWhile(this, predicate), this);
         }
 
         /** 
-         * Creates a new `Iterator` that skip values until `predicate`
-         * returns `false`.
+         * Creates an `Iterator` that skip values until `predicate` returns `false`.
          * After returning `false` no more values are skipped.
          */
         skipWhile(predicate: (val: T) => boolean): SkipWhile<T> {
                 return setPrototype(new SkipWhile(this, predicate), this);
         }
 
+        /** Yields the `n`th value of the iterator. */
         nth(n: number): T | undefined {
                 let val;
                 while (n-- >= 0 && !(val = this.next()).done) ; // Empty block.
@@ -101,6 +102,7 @@ abstract class Iterator<T> {
                 return val?.value;
         }
 
+        /** Creates an `Iterator` that skips the first `n` values. */
         skip(n: number): Iterator<T> {
                 const self = this;
                 const iter: Iterator<T> = Object.create(self);
