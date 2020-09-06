@@ -56,6 +56,12 @@ abstract class Iterator<T> {
                 return this.peekBuf;
         }
 
+        /**
+         * Consumes the `Iterator` and returns the yielded values.
+         * 
+         * The default implementation returns `T[]`. Specializations may
+         * use other forms of collections (such as `String`).
+         */
         collect() {
                 const res: any = [];
                 let v;
