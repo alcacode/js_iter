@@ -74,8 +74,16 @@ var Iterator = (function () {
         return val === null || val === void 0 ? void 0 : val.value;
     };
     Iterator.prototype.skip = function (n) {
-        this.nth(n);
-        return this;
+        var self = this;
+        var iter = Object.create(self);
+        iter.next = function () {
+            var val = { value: undefined, done: true };
+            while (n-- >= 0 && !(val = self.next()).done)
+                ;
+            delete iter.next;
+            return val;
+        };
+        return iter;
     };
     return Iterator;
 }());
