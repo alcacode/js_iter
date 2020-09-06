@@ -101,9 +101,18 @@ abstract class Iterator<T> {
                 return val?.value;
         }
 
-        skip(n: number): this {
-                this.nth(n);
-                return this;
+        skip(n: number): Iterator<T> {
+                const self = this;
+                const iter: Iterator<T> = Object.create(self);
+                iter.next = function(): IteratorResult<T> {
+                        let val: IteratorResult<T> = { value: undefined, done: true };
+                        while (n-- >= 0 && !(val = self.next()).done) ; // Empty block.
+
+                        delete iter.next;
+                        return val;
+                }
+
+                return iter;
         }
 }
 
