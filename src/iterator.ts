@@ -184,7 +184,7 @@ abstract class Iterator<T> {
                         function(_super) {
                                 return function(): IteratorResult<T> {
                                         let res;
-                                        while (!(res = _super.next()).done && !predicate(res.value)) {
+                                        while (!(res = _super.next()).done && !predicate.call(undefined, res.value)) {
                                                 /* Intentionally left empty. */
                                         }
                                         return res;
@@ -194,15 +194,30 @@ abstract class Iterator<T> {
         }
 
         /**
-         * Peeks at the next value without incrementing self.
+         * Produces a single value by applying `f`.
          *
-         * Note that `peek()` does increment underlying `Iterator`s.
+         * `f` is called with an accumulator and the value obtained by calling
+         * `next()`. Its return value becomes the next iteration's accumulator.
+         * The initial value of the accumulator is `init`.
          */
-        peek(): IteratorResult<T> {
-                if (this.peekBuf === null)
-                        this.peekBuf = this.next();
+        fold<A>(init: A, f: (acc: A, value: T) => A): A {
+                let acc = init;
+                let res;
+                while (!(res = this.next()).done) {
+                        acc = f.call(undefined, acc, res.value);
+                }
 
-                return this.peekBuf;
+                return acc;
+        }
+        
+        /** Yields the `n`th value of the iterator. */
+        nth(n: number): T | undefined {
+                let val;
+                while (n-- >= 0 && !(val = this.next()).done) {
+                        /* Intentionally left empty. */
+                }
+
+                return val?.value;
         }
 
         /** Creates an iterator that yields the first `n` values. */
@@ -234,16 +249,6 @@ abstract class Iterator<T> {
                 return setPrototype(new SkipWhile(this, predicate), this);
         }
 
-        /** Yields the `n`th value of the iterator. */
-        nth(n: number): T | undefined {
-                let val;
-                while (n-- >= 0 && !(val = this.next()).done) {
-                        /* Intentionally left empty. */
-                }
-
-                return val?.value;
-        }
-
         /** Creates an `Iterator` that skips the first `n` values. */
         skip(n: number): Iterator<T> {
                 const self = this;
@@ -259,6 +264,25 @@ abstract class Iterator<T> {
                 }
 
                 return iter;
+        }
+
+        /**
+         * Sums the elements of the iterator. Only works for `Iterator<number>`.
+         */
+        sum(this: Iterator<T extends number ? T : never>): number {
+                return this.fold(0, (acc, val) => acc + val);
+        }
+
+        /**
+         * Peeks at the next value without incrementing self.
+         *
+         * Note that `peek()` does increment underlying `Iterator`s.
+         */
+        peek(): IteratorResult<T> {
+                if (this.peekBuf === null)
+                        this.peekBuf = this.next();
+
+                return this.peekBuf;
         }
 }
 

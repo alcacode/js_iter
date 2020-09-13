@@ -3,7 +3,7 @@ var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
             ({ __proto__: [] } instanceof Array && function (d, b) { d.__proto__ = b; }) ||
-            function (d, b) { for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p]; };
+            function (d, b) { for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p]; };
         return extendStatics(d, b);
     };
     return function (d, b) {
@@ -120,16 +120,25 @@ var Iterator = (function () {
         return Iterator.derive(this, function (_super) {
             return function () {
                 var res;
-                while (!(res = _super.next()).done && !predicate(res.value)) {
+                while (!(res = _super.next()).done && !predicate.call(undefined, res.value)) {
                 }
                 return res;
             };
         });
     };
-    Iterator.prototype.peek = function () {
-        if (this.peekBuf === null)
-            this.peekBuf = this.next();
-        return this.peekBuf;
+    Iterator.prototype.fold = function (init, f) {
+        var acc = init;
+        var res;
+        while (!(res = this.next()).done) {
+            acc = f.call(undefined, acc, res.value);
+        }
+        return acc;
+    };
+    Iterator.prototype.nth = function (n) {
+        var val;
+        while (n-- >= 0 && !(val = this.next()).done) {
+        }
+        return val === null || val === void 0 ? void 0 : val.value;
     };
     Iterator.prototype.take = function (n) {
         var self = this;
@@ -149,12 +158,6 @@ var Iterator = (function () {
     Iterator.prototype.skipWhile = function (predicate) {
         return setPrototype(new SkipWhile(this, predicate), this);
     };
-    Iterator.prototype.nth = function (n) {
-        var val;
-        while (n-- >= 0 && !(val = this.next()).done) {
-        }
-        return val === null || val === void 0 ? void 0 : val.value;
-    };
     Iterator.prototype.skip = function (n) {
         var self = this;
         var iter = Object.create(self);
@@ -166,6 +169,14 @@ var Iterator = (function () {
             return val;
         };
         return iter;
+    };
+    Iterator.prototype.sum = function () {
+        return this.fold(0, function (acc, val) { return acc + val; });
+    };
+    Iterator.prototype.peek = function () {
+        if (this.peekBuf === null)
+            this.peekBuf = this.next();
+        return this.peekBuf;
     };
     return Iterator;
 }());

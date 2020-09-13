@@ -13,7 +13,7 @@ function StringIterator(str: string): ExactSizeIterator<string> {
                         res += val.value;
 
                 return res;
-        }
+        };
 
         return iter;
 }
