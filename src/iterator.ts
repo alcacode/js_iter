@@ -30,6 +30,11 @@ type IteratorResult<T> = {
 };
 
 type ProtoAttr = { __proto__: object | null };
+/**
+ * Function returning a function bound to `thisVal` returning an
+ * `IteratorResult<R>`.
+ */
+type CurriedIteratorResult<T, R = T> = (thisVal: Iterator<T>) => () => IteratorResult<R>;
 
 function setPrototype<T, U>(target: T, proto: object | null): U & ProtoAttr {
         (target as T & ProtoAttr).__proto__ = proto;
@@ -37,7 +42,7 @@ function setPrototype<T, U>(target: T, proto: object | null): U & ProtoAttr {
 }
 
 interface Iterator<T> {
-        __proto__: Iterator<T>;
+        __proto__: Iterator<any>;
 }
 
 abstract class Iterator<T> {
@@ -102,16 +107,8 @@ abstract class Iterator<T> {
                 return val;
         }
 
-        /** Peeks at the next value without incrementing the `Iterator`. */
-        peek(): IteratorResult<T> {
-                if (this.peekBuf === null)
-                        this.peekBuf = this.next();
-
-                return this.peekBuf;
-        }
-
         /**
-         * Consumes the `Iterator` and returns the yielded values.
+         * Consumes self and returns the yielded values.
          * 
          * The default implementation returns `T[]`. Specializations may
          * use other forms of collections (such as `String`).
@@ -178,6 +175,18 @@ abstract class Iterator<T> {
                 return iter;
         }
 
+        /**
+         * Peeks at the next value without incrementing self.
+         * 
+         * Note that `peek()` does increment underlying `Iterator`s.
+         */
+        peek(): IteratorResult<T> {
+                if (this.peekBuf === null)
+                        this.peekBuf = this.next();
+
+                return this.peekBuf;
+        }
+
         /** Creates an iterator that yields the first `n` values. */
         take(n: number): Iterator<T> {
                 const self = this;
@@ -210,7 +219,7 @@ abstract class Iterator<T> {
         /** Yields the `n`th value of the iterator. */
         nth(n: number): T | undefined {
                 let val;
-                while (n-- >= 0 && !(val = this.next()).done) ; // Empty block.
+                while (n-- >= 0 && !(val = this.next()).done) { }
 
                 return val?.value;
         }
@@ -221,9 +230,9 @@ abstract class Iterator<T> {
                 const iter: Iterator<T> = Object.create(self);
                 iter.next = function(): IteratorResult<T> {
                         let val: IteratorResult<T> = { value: undefined, done: true };
-                        while (n-- >= 0 && !(val = self.next()).done) ; // Empty block.
+                        while (n-- >= 0 && !(val = self.next()).done) { }
 
-                        delete iter.next;
+                        iter.next = self.next;
                         return val;
                 }
 
@@ -255,11 +264,6 @@ abstract class ExactSizeIterator<T> extends Iterator<T> {
                 return this.len() <= 0;
         }
 
-        /**
-         * Returns the exact length of the `Iterator`. This is equivallent
-         * to the number of remaining iterations.
-         */
-        abstract len(): number;
 }
 
 class TakeWhile<T> extends Iterator<T> {
@@ -281,7 +285,7 @@ class TakeWhile<T> extends Iterator<T> {
 }
 
 class SkipWhile<T> extends Iterator<T> {
-        private flag: boolean = false;
+        private _skipDone: boolean = false;
 
         constructor(
                 private iter: Iterator<T>,
@@ -289,11 +293,11 @@ class SkipWhile<T> extends Iterator<T> {
         ) { super(); }
 
         next(): IteratorResult<T> {
-                if (!this.flag) {
+                if (!this._skipDone) {
                         let val;
                         while (!(val = this.iter.next()).done
                                  && this.pred.call(undefined, val.value!)) ; // Empty block.
-                        this.flag = true;
+                        this._skipDone = true;
                         return val;
                 }
 
