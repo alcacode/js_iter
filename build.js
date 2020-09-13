@@ -12,6 +12,16 @@ var __extends = (this && this.__extends) || (function () {
         d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
     };
 })();
+function numInRange(num, min, max) {
+    if (min === undefined)
+        min = Number.NEGATIVE_INFINITY;
+    if (max === undefined)
+        max = Number.POSITIVE_INFINITY;
+    return typeof num === "number"
+        && num === num
+        && num >= min
+        && num <= max;
+}
 function setPrototype(target, proto) {
     target.__proto__ = proto;
     return target;
@@ -24,6 +34,42 @@ var Iterator = (function () {
         this.next = this._next;
         this._next = next;
     }
+    Iterator.from = function (iterable) {
+        return new (function (_super_1) {
+            __extends(class_1, _super_1);
+            function class_1() {
+                var _this = _super_1 !== null && _super_1.apply(this, arguments) || this;
+                _this.offset = 0;
+                return _this;
+            }
+            class_1.prototype.len = function () {
+                return iterable.length - this.offset;
+            };
+            class_1.prototype.next = function () {
+                return this.isEmpty()
+                    ? { value: undefined, done: true }
+                    : { value: iterable[this.offset++], done: false };
+            };
+            return class_1;
+        }(ExactSizeIterator))();
+    };
+    Iterator.prototype.derive = function (iter, next) {
+        var self = new ((function (_super_1) {
+            __extends(class_2, _super_1);
+            function class_2() {
+                var _this = _super_1 !== null && _super_1.apply(this, arguments) || this;
+                _this.next = next instanceof Function
+                    ? (next.length === 0
+                        ? next
+                        : next(iter))
+                    : iter.next;
+                return _this;
+            }
+            return class_2;
+        }(Iterator)))();
+        self.__proto__ = Object.create(iter);
+        return self;
+    };
     Iterator.prototype._next = function () {
         if (this.peekBuf !== null) {
             var val_1 = this.peekBuf;
@@ -37,17 +83,43 @@ var Iterator = (function () {
             this.done = true;
         return val;
     };
-    Iterator.prototype.peek = function () {
-        if (this.peekBuf === null)
-            this.peekBuf = this.next();
-        return this.peekBuf;
-    };
     Iterator.prototype.collect = function () {
         var res = [];
         var v;
         while (!(v = this.next()).done)
             res.push(v.value);
         return res;
+    };
+    Iterator.prototype.map = function (f) {
+        return Iterator.prototype.derive(this, function (_super) {
+            return function () {
+                var res = _super.next();
+                if (!res.done)
+                    return { value: f(res.value), done: false };
+                return res;
+            };
+        });
+    };
+    Iterator.prototype.chunks = function (n) {
+        if (!numInRange(n, 1, 0xFFFFFFFF))
+            throw RangeError("chunk size does not satisfy [0 < `n` < 4,294,967,296]");
+        n = n >>> 0;
+        var iter = Iterator.prototype.derive(this, function (_super) {
+            return function () {
+                var rval = _super.take(n).collect();
+                return rval.length !== 0
+                    ? { value: rval, done: false }
+                    : { value: undefined, done: true };
+            };
+        });
+        if (iter.collect !== Iterator.prototype.collect)
+            iter.collect = Iterator.prototype.collect;
+        return iter;
+    };
+    Iterator.prototype.peek = function () {
+        if (this.peekBuf === null)
+            this.peekBuf = this.next();
+        return this.peekBuf;
     };
     Iterator.prototype.take = function (n) {
         var self = this;
@@ -69,8 +141,7 @@ var Iterator = (function () {
     };
     Iterator.prototype.nth = function (n) {
         var val;
-        while (n-- >= 0 && !(val = this.next()).done)
-            ;
+        while (n-- >= 0 && !(val = this.next()).done) { }
         return val === null || val === void 0 ? void 0 : val.value;
     };
     Iterator.prototype.skip = function (n) {
@@ -78,29 +149,35 @@ var Iterator = (function () {
         var iter = Object.create(self);
         iter.next = function () {
             var val = { value: undefined, done: true };
-            while (n-- >= 0 && !(val = self.next()).done)
-                ;
-            delete iter.next;
+            while (n-- >= 0 && !(val = self.next()).done) { }
+            iter.next = self.next;
             return val;
         };
         return iter;
     };
     return Iterator;
 }());
-var ExactSizeIterator = (function (_super) {
-    __extends(ExactSizeIterator, _super);
+var ExactSizeIterator = (function (_super_1) {
+    __extends(ExactSizeIterator, _super_1);
     function ExactSizeIterator() {
-        return _super !== null && _super.apply(this, arguments) || this;
+        var _this = _super_1.call(this) || this;
+        var len = _this.len;
+        _this.len = _this._len;
+        _this._len = len;
+        return _this;
     }
+    ExactSizeIterator.prototype._len = function () {
+        return this._len() + (this.peekBuf !== null ? 1 : 0);
+    };
     ExactSizeIterator.prototype.isEmpty = function () {
         return this.len() <= 0;
     };
     return ExactSizeIterator;
 }(Iterator));
-var TakeWhile = (function (_super) {
-    __extends(TakeWhile, _super);
+var TakeWhile = (function (_super_1) {
+    __extends(TakeWhile, _super_1);
     function TakeWhile(iter, pred) {
-        var _this = _super.call(this) || this;
+        var _this = _super_1.call(this) || this;
         _this.iter = iter;
         _this.pred = pred;
         return _this;
@@ -116,59 +193,38 @@ var TakeWhile = (function (_super) {
     };
     return TakeWhile;
 }(Iterator));
-var SkipWhile = (function (_super) {
-    __extends(SkipWhile, _super);
+var SkipWhile = (function (_super_1) {
+    __extends(SkipWhile, _super_1);
     function SkipWhile(iter, pred) {
-        var _this = _super.call(this) || this;
+        var _this = _super_1.call(this) || this;
         _this.iter = iter;
         _this.pred = pred;
-        _this.flag = false;
+        _this._skipDone = false;
         return _this;
     }
     SkipWhile.prototype.next = function () {
-        if (!this.flag) {
+        if (!this._skipDone) {
             var val = void 0;
             while (!(val = this.iter.next()).done
                 && this.pred.call(undefined, val.value))
                 ;
-            this.flag = true;
+            this._skipDone = true;
             return val;
         }
         return this.iter.next();
     };
     return SkipWhile;
 }(Iterator));
-var stringIterator = (function (_super) {
-    __extends(stringIterator, _super);
-    function stringIterator(str) {
-        var _this = _super.call(this) || this;
-        _this.str = str;
-        _this.offset = 0;
-        if (typeof str !== "string")
-            throw TypeError("'" + str + "' is not a string");
-        return _this;
-    }
-    stringIterator.prototype.collect = function () {
+function stringIterator(str) {
+    if (typeof str !== "string")
+        throw TypeError("'" + str + "' is not a string");
+    var iter = Iterator.from(str);
+    iter.collect = function () {
         var res = "";
         var val;
         while (!(val = this.next()).done)
             res += val.value;
         return res;
     };
-    stringIterator.prototype.len = function () {
-        return this.str.length - this.offset;
-    };
-    stringIterator.prototype.next = function () {
-        if (!this.isEmpty()) {
-            return {
-                value: this.str[this.offset++],
-                done: false,
-            };
-        }
-        return {
-            value: undefined,
-            done: true,
-        };
-    };
-    return stringIterator;
-}(ExactSizeIterator));
+    return iter;
+}
