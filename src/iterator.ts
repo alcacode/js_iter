@@ -31,6 +31,38 @@ abstract class Iterator<T> {
                 this._next = next;
         }
 
+        static from<T>(iterable: { length: number; [index: number]: T; }): ExactSizeIterator<T> {
+                return new class extends ExactSizeIterator<T> {
+                        private offset = 0;
+
+                        len() {
+                                return iterable.length - this.offset;
+                        }
+
+                        next(): IteratorResult<T> {
+                                return this.isEmpty()
+                                        ? { value: undefined, done: true }
+                                        : { value: iterable[this.offset++], done: false };
+                        }
+                }();
+        }
+
+        private derive(iter: Iterator<T>): Iterator<T>;
+        private derive<U>(iter: Iterator<T>, next: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<U>;
+        private derive<U>(iter: Iterator<T>, next?: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<T|U> {
+                const self = new (class extends Iterator<T|U> {
+                        next = next instanceof Function
+                                ? (next.length === 0
+                                        ? next as () => IteratorResult<T>
+                                        : (next as CurriedIteratorResult<T, U>)(iter)
+                                  )
+                                : iter.next;
+                })();
+                self.__proto__ = Object.create(iter);
+
+                return self;
+        }
+
         private _next(): IteratorResult<T> {
                 if (this.peekBuf !== null) {
                         const val = this.peekBuf;
