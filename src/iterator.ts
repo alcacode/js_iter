@@ -176,6 +176,24 @@ abstract class Iterator<T> {
         }
 
         /**
+         * Creates an iterator yielding values based on a `predicate` function.
+         */
+        filter(predicate: (value: T) => boolean): Iterator<T> {
+                return Iterator.derive(
+                        this,
+                        function(_super) {
+                                return function(): IteratorResult<T> {
+                                        let res;
+                                        while (!(res = _super.next()).done && !predicate(res.value)) {
+                                                /* Intentionally left empty. */
+                                        }
+                                        return res;
+                                }
+                        }
+                )
+        }
+
+        /**
          * Peeks at the next value without incrementing self.
          *
          * Note that `peek()` does increment underlying `Iterator`s.

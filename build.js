@@ -53,7 +53,7 @@ var Iterator = (function () {
             return class_1;
         }(ExactSizeIterator))();
     };
-    Iterator.prototype.derive = function (iter, next) {
+    Iterator.derive = function (iter, next) {
         var self = new ((function (_super_1) {
             __extends(class_2, _super_1);
             function class_2() {
@@ -91,7 +91,7 @@ var Iterator = (function () {
         return res;
     };
     Iterator.prototype.map = function (f) {
-        return Iterator.prototype.derive(this, function (_super) {
+        return Iterator.derive(this, function (_super) {
             return function () {
                 var res = _super.next();
                 if (!res.done)
@@ -104,7 +104,7 @@ var Iterator = (function () {
         if (!numInRange(n, 1, 0xFFFFFFFF))
             throw RangeError("chunk size does not satisfy [0 < `n` < 4,294,967,296]");
         n = n >>> 0;
-        var iter = Iterator.prototype.derive(this, function (_super) {
+        var iter = Iterator.derive(this, function (_super) {
             return function () {
                 var rval = _super.take(n).collect();
                 return rval.length !== 0
@@ -115,6 +115,16 @@ var Iterator = (function () {
         if (iter.collect !== Iterator.prototype.collect)
             iter.collect = Iterator.prototype.collect;
         return iter;
+    };
+    Iterator.prototype.filter = function (predicate) {
+        return Iterator.derive(this, function (_super) {
+            return function () {
+                var res;
+                while (!(res = _super.next()).done && !predicate(res.value)) {
+                }
+                return res;
+            };
+        });
     };
     Iterator.prototype.peek = function () {
         if (this.peekBuf === null)
