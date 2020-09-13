@@ -1,5 +1,26 @@
 //! iterator.js - ES5 compatible Rust-inspired iterator.
 
+/**
+ * Returns `true` if `num` satisfies [`min` <= `num` <= `max`].\\
+ * Returns `false` if `num` is `NaN` or not of type `number`.
+ * 
+ * @param num The `Number` to be tested.
+ * @param min Minimal allowed value. Defaults to `Number.NEGATIVE_INFINITY`.
+ * @param max Maximal allowed value. Defaults to `Number.POSITIVE_INFINITY`.
+ */
+function numInRange(num: number, min?: number, max?: number): boolean {
+        if (min === undefined)
+                min = Number.NEGATIVE_INFINITY;
+
+        if (max === undefined)
+                max = Number.POSITIVE_INFINITY;
+
+        return typeof num === "number"
+               && num === num // NaN is not equal to itself
+               && num >= min
+               && num <= max;
+}
+
 type IteratorResult<T> = {
         value: T;
         done: false;
@@ -117,6 +138,44 @@ abstract class Iterator<T> {
                                 }
                         }
                 );
+        }
+
+        /**
+         * Creates an iterator yielding `n` values at a time.
+         * 
+         * If `n` is not evenly divisible by the length of the iterator the
+         * last chunk will contain the length of the iterator mod `n` elements.
+         * 
+         * @param n Number of values to yield.
+         */
+        chunks(n: number): Iterator<T[]> {
+                /** 
+                 * 0xFFFFFFFF (2^32 - 1) is the largest value representable by
+                 * an unsigned 32-bit integer (u32).
+                 */
+                if (!numInRange(n, 1, 0xFFFFFFFF))
+                        throw RangeError("chunk size does not satisfy [0 < `n` < 4,294,967,296]");
+
+                // Cast to u32. This is equivalent to floor(x), 0 <= x <= 0xFFFFFFFF.
+                n = n >>> 0;
+
+                const iter = Iterator.prototype.derive(
+                        this,
+                        function(_super: Iterator<T>) {
+                                return function(): IteratorResult<T[]> {
+                                        const rval: T[] = _super.take(n).collect();
+
+                                        return rval.length !== 0
+                                                ? { value: rval, done: false }
+                                                : { value: undefined, done: true };
+                                }
+                        }
+                );
+
+                if (iter.collect !== Iterator.prototype.collect)
+                        iter.collect = Iterator.prototype.collect;
+
+                return iter;
         }
 
         /** Creates an iterator that yields the first `n` values. */
