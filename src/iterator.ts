@@ -73,9 +73,9 @@ abstract class Iterator<T> {
                 }();
         }
 
-        private derive(iter: Iterator<T>): Iterator<T>;
-        private derive<U>(iter: Iterator<T>, next: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<U>;
-        private derive<U>(iter: Iterator<T>, next?: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<T|U> {
+        static derive<T>(iter: Iterator<T>): Iterator<T>;
+        static derive<T, U>(iter: Iterator<T>, next: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<U>;
+        static derive<T, U>(iter: Iterator<T>, next?: (() => IteratorResult<U>) | CurriedIteratorResult<T, U>): Iterator<T|U> {
                 const self = new (class extends Iterator<T|U> {
                         next = next instanceof Function
                                 ? (next.length === 0
@@ -123,7 +123,7 @@ abstract class Iterator<T> {
         }
 
         map<U>(f: (value: T) => U): Iterator<U> {
-                return Iterator.prototype.derive(
+                return Iterator.derive(
                         this,
                         function(_super: Iterator<T>) {
                                 return function(): IteratorResult<U> {
@@ -156,7 +156,7 @@ abstract class Iterator<T> {
                 // Cast to u32. This is equivalent to floor(x), 0 <= x <= 0xFFFFFFFF.
                 n = n >>> 0;
 
-                const iter = Iterator.prototype.derive(
+                const iter = Iterator.derive(
                         this,
                         function(_super: Iterator<T>) {
                                 return function(): IteratorResult<T[]> {
