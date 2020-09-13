@@ -173,6 +173,24 @@ abstract class Iterator<T> {
 }
 
 abstract class ExactSizeIterator<T> extends Iterator<T> {
+        /**
+         * Returns the exact length of the `Iterator`. This is equivallent
+         * to the number of remaining iterations.
+         */
+        abstract len(): number;
+
+        constructor() {
+                super();
+
+                const len = this.len;
+                this.len = this._len;
+                this._len = len;
+        }
+
+        private _len(): number {
+                return this._len() + (this.peekBuf !== null ? 1 : 0);
+        }
+
         /** Returns `true` if the `Iterator` is empty. */
         isEmpty(): boolean {
                 return this.len() <= 0;
