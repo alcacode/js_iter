@@ -3,7 +3,7 @@
 /**
  * Returns `true` if `num` satisfies [`min` <= `num` <= `max`].\\
  * Returns `false` if `num` is `NaN` or not of type `number`.
- * 
+ *
  * @param num The `Number` to be tested.
  * @param min Minimal allowed value. Defaults to `Number.NEGATIVE_INFINITY`.
  * @param max Maximal allowed value. Defaults to `Number.POSITIVE_INFINITY`.
@@ -109,7 +109,7 @@ abstract class Iterator<T> {
 
         /**
          * Consumes self and returns the yielded values.
-         * 
+         *
          * The default implementation returns `T[]`. Specializations may
          * use other forms of collections (such as `String`).
          */
@@ -139,10 +139,10 @@ abstract class Iterator<T> {
 
         /**
          * Creates an iterator yielding `n` values at a time.
-         * 
+         *
          * If `n` is not evenly divisible by the length of the iterator the
          * last chunk will contain the length of the iterator mod `n` elements.
-         * 
+         *
          * @param n Number of values to yield.
          */
         chunks(n: number): Iterator<T[]> {
@@ -177,7 +177,7 @@ abstract class Iterator<T> {
 
         /**
          * Peeks at the next value without incrementing self.
-         * 
+         *
          * Note that `peek()` does increment underlying `Iterator`s.
          */
         peek(): IteratorResult<T> {
@@ -219,7 +219,9 @@ abstract class Iterator<T> {
         /** Yields the `n`th value of the iterator. */
         nth(n: number): T | undefined {
                 let val;
-                while (n-- >= 0 && !(val = this.next()).done) { }
+                while (n-- >= 0 && !(val = this.next()).done) {
+                        /* Intentionally left empty. */
+                }
 
                 return val?.value;
         }
@@ -230,7 +232,9 @@ abstract class Iterator<T> {
                 const iter: Iterator<T> = Object.create(self);
                 iter.next = function(): IteratorResult<T> {
                         let val: IteratorResult<T> = { value: undefined, done: true };
-                        while (n-- >= 0 && !(val = self.next()).done) { }
+                        while (n-- >= 0 && !(val = self.next()).done) {
+                                /* Intentionally left empty. */
+                        }
 
                         iter.next = self.next;
                         return val;

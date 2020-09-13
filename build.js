@@ -141,7 +141,8 @@ var Iterator = (function () {
     };
     Iterator.prototype.nth = function (n) {
         var val;
-        while (n-- >= 0 && !(val = this.next()).done) { }
+        while (n-- >= 0 && !(val = this.next()).done) {
+        }
         return val === null || val === void 0 ? void 0 : val.value;
     };
     Iterator.prototype.skip = function (n) {
@@ -149,7 +150,8 @@ var Iterator = (function () {
         var iter = Object.create(self);
         iter.next = function () {
             var val = { value: undefined, done: true };
-            while (n-- >= 0 && !(val = self.next()).done) { }
+            while (n-- >= 0 && !(val = self.next()).done) {
+            }
             iter.next = self.next;
             return val;
         };
@@ -215,7 +217,7 @@ var SkipWhile = (function (_super_1) {
     };
     return SkipWhile;
 }(Iterator));
-function stringIterator(str) {
+function StringIterator(str) {
     if (typeof str !== "string")
         throw TypeError("'" + str + "' is not a string");
     var iter = Iterator.from(str);
