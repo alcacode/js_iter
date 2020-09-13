@@ -104,6 +104,21 @@ abstract class Iterator<T> {
                 return res;
         }
 
+        map<U>(f: (value: T) => U): Iterator<U> {
+                return Iterator.prototype.derive(
+                        this,
+                        function(_super: Iterator<T>) {
+                                return function(): IteratorResult<U> {
+                                        const res = _super.next();
+                                        if (!res.done)
+                                                return { value: f(res.value), done: false };
+
+                                        return res;
+                                }
+                        }
+                );
+        }
+
         /** Creates an iterator that yields the first `n` values. */
         take(n: number): Iterator<T> {
                 const self = this;
