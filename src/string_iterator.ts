@@ -1,16 +1,11 @@
 //! string_iterator.js - Iterator specialization for String.
 
-class stringIterator extends ExactSizeIterator<string> {
-        private offset: number = 0;
+function StringIterator(str: string): ExactSizeIterator<string> {
+        if (typeof str !== "string")
+                throw TypeError("'" + str + "' is not a string");
 
-        constructor(private str: string) {
-                super();
-
-                if (typeof str !== "string")
-                        throw TypeError("'" + str + "' is not a string");
-        }
-
-        collect(): string {
+        const iter = Iterator.from(str);
+        iter.collect = function() {
                 let res = "";
 
                 let val;
@@ -20,21 +15,5 @@ class stringIterator extends ExactSizeIterator<string> {
                 return res;
         }
 
-        len(): number {
-                return this.str.length - this.offset + (this.peekBuf !== null ? 1 : 0);
-        }
-
-        next(): IteratorResult<string> {
-                if (!this.isEmpty()) {
-                        return {
-                                value: this.str[this.offset++],
-                                done: false,
-                        };
-                }
-
-                return {
-                        value: undefined,
-                        done: true,
-                };
-        }
+        return iter;
 }
